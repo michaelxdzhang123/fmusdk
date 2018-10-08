@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<fmiModelDescription fmiVersion="3.0-dev" modelName="van der Pol oscillator" guid="{8c4e810f-3da3-4a00-8276-176fa3c9f000}" numberOfEventIndicators="0">
+
+  <CoSimulation modelIdentifier="VanDerPol" canHandleVariableCommunicationStepSize="true">
+    <SourceFiles>
+      <File name="VanDerPol.c" />
+    </SourceFiles>
+  </CoSimulation>
+
+  <ModelExchange modelIdentifier="VanDerPol">
+    <SourceFiles>
+      <File name="VanDerPol.c" />
+    </SourceFiles>
+  </ModelExchange>
+
+  <LogCategories>
+    <Category name="logAll" />
+    <Category name="logError" />
+    <Category name="logFmiCall" />
+    <Category name="logEvent" />
+  </LogCategories>
+
+  <DefaultExperiment startTime="0" stopTime="10"></DefaultExperiment>
+
+  <ModelVariables>
+
+    <Variable name="x0" valueReference="0" description="the first state" causality="output" variability="continuous" initial="exact">
+      <Real start="2" />
+    </Variable>
+
+    <Variable name="der(x0)" valueReference="1" causality="local" variability="continuous" initial="calculated">
+      <Real derivative="1" />
+    </Variable>
+
+    <Variable name="x1" valueReference="2" description="the second state" causality="output" variability="continuous" initial="exact">
+      <Real start="0" />
+    </Variable>
+
+    <Variable name="der(x1)" valueReference="3" causality="local" variability="continuous" initial="calculated">
+      <Real derivative="3" />
+    </Variable>
+
+    <Variable name="mu" valueReference="4" causality="parameter" variability="fixed" initial="exact">
+      <Real start="1" />
+    </Variable>
+
+  </ModelVariables>
+
+  <ModelStructure>
+    <Derivatives>
+      <Unknown valueReference="1" />
+      <Unknown valueReference="3" />
+    </Derivatives>
+    <InitialUnknowns>
+      <Unknown valueReference="1" />
+      <Unknown valueReference="3" />
+    </InitialUnknowns>
+  </ModelStructure>
+
+</fmiModelDescription>
