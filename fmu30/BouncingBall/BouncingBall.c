@@ -16,17 +16,19 @@
  * Copyright QTronic GmbH. All rights reserved.
  * ---------------------------------------------------------------------------*/
 
+#include <string.h>  // for size_t
+
 // define class name and unique id
 #define MODEL_IDENTIFIER bouncingBall
 #define MODEL_GUID "{8c4e810f-3df3-4a00-8276-176fa3c9f003}"
 
 // define model size
-#define NUMBER_OF_REALS 6
-#define NUMBER_OF_INTEGERS 0
-#define NUMBER_OF_BOOLEANS 0
-#define NUMBER_OF_STRINGS 0
 #define NUMBER_OF_STATES 2
 #define NUMBER_OF_EVENT_INDICATORS 1
+
+#define N_VARIABLES 6
+char   s_variableTypes[N_VARIABLES] = "rrrrrr";
+size_t s_variableSizes[N_VARIABLES] = {1, 1, 1, 1, 1, 1};
 
 // include fmu header files, typedefs and macros
 #include "fmu3Template.h"
@@ -52,10 +54,10 @@ fmi3Variable variables[6] = { NULL };
 // Set values for all variables that define a start value
 // Settings used unless changed by fmi3SetX before fmi3EnterInitializationMode
 void setStartValues(ModelInstance *comp) {
-    r(h_)     =  1;
-    r(v_)     =  0;
-    r(g_)     =  9.81;
-    r(e_)     =  0.7;
+    r(h_) = 1;
+    r(v_) = 0;
+    r(g_) = 9.81;
+    r(e_) = 0.7;
 }
 
 // called by fmi3GetReal, fmi3GetInteger, fmi3GetBoolean, fmi3GetString, fmi3ExitInitialization
@@ -136,15 +138,15 @@ fmi3Status fmi3SetVariables (fmi3Component component,
 }
 
 // called by fmi3GetReal, fmi3GetContinuousStates and fmi3GetDerivatives
-fmi3Real getReal(ModelInstance* comp, fmi3ValueReference vr) {
+fmi3Real* getReal(ModelInstance* comp, fmi3ValueReference vr) {
     switch (vr) {
-        case h_     : return r(h_);
-        case der_h_ : return r(v_);
-        case v_     : return r(v_);
-        case der_v_ : return r(der_v_);
-        case g_     : return r(g_);
-        case e_     : return r(e_);
-        default: return 0;
+        case h_     : return R(comp, h_);
+        case der_h_ : return R(comp, v_);
+        case v_     : return R(comp, v_);
+        case der_v_ : return R(comp, der_v_);
+        case g_     : return R(comp, g_);
+        case e_     : return R(comp, e_);
+        default: return (fmi3Real*)NULL;
     }
 }
 

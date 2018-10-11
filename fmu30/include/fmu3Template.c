@@ -83,9 +83,14 @@ static fmi3Boolean nullPointer(ModelInstance* comp, const char *f, const char *a
     return fmi3False;
 }
 
-static fmi3Boolean vrOutOfRange(ModelInstance *comp, const char *f, fmi3ValueReference vr, int end) {
-    if (vr >= end) {
+static fmi3Boolean vrOutOfRange(ModelInstance *comp, const char *f, fmi3ValueReference vr, char type) {
+    if (vr >= N_VARIABLES) {
         FILTERED_LOG(comp, fmi3Error, LOG_ERROR, "%s: Illegal value reference %u.", f, vr)
+        comp->state = modelError;
+        return fmi3True;
+    }
+    if (s_variableTypes[vr] != type) {
+        FILTERED_LOG(comp, fmi3Error, LOG_ERROR, "%s: Variable %u is not a %c.", f, vr, type)
         comp->state = modelError;
         return fmi3True;
     }
@@ -153,12 +158,24 @@ fmi3Component fmi3Instantiate(fmi3String instanceName, fmi3Type fmuType, fmi3Str
     comp = (ModelInstance *)functions->allocateMemory(NULL, 1, sizeof(ModelInstance));
     if (comp) {
         int i;
-        comp->r = (fmi3Real *)   functions->allocateMemory(comp, NUMBER_OF_REALS,    sizeof(fmi3Real));
-        comp->i = (fmi3Integer *)functions->allocateMemory(comp, NUMBER_OF_INTEGERS, sizeof(fmi3Integer));
-        comp->b = (fmi3Boolean *)functions->allocateMemory(comp, NUMBER_OF_BOOLEANS, sizeof(fmi3Boolean));
-        comp->s = (fmi3String *) functions->allocateMemory(comp, NUMBER_OF_STRINGS,  sizeof(fmi3String));
+        
+        for (i=0; i < N_VARIABLES; i++) {
+            size_t typeSize;
+            
+            switch (s_variableTypes[i]) {
+                case 'r': typeSize = sizeof(fmi3Real); break;
+                case 'i': typeSize = sizeof(fmi3Integer); break;
+                case 'b': typeSize = sizeof(fmi3Boolean); break;
+                case 's': typeSize = sizeof(fmi3String); break;
+                default: return NULL; // error
+            }
+            
+            comp->variables[i] = functions->allocateMemory(comp, s_variableSizes[i], typeSize);
+        }
+        
         comp->isPositive = (fmi3Boolean *)functions->allocateMemory(comp, NUMBER_OF_EVENT_INDICATORS,
             sizeof(fmi3Boolean));
+        
         comp->instanceName = (char *)functions->allocateMemory(comp, 1 + strlen(instanceName), sizeof(char));
         comp->GUID = (char *)functions->allocateMemory(comp, 1 + strlen(fmuGUID), sizeof(char));
 
@@ -167,7 +184,9 @@ fmi3Component fmi3Instantiate(fmi3String instanceName, fmi3Type fmuType, fmi3Str
             comp->logCategories[i] = loggingOn;
         }
     }
-    if (!comp || !comp->r || !comp->i || !comp->b || !comp->s || !comp->isPositive
+    if (!comp
+        || !comp->variables
+        || !comp->isPositive
         || !comp->instanceName || !comp->GUID) {
 
         functions->logger(functions->componentEnvironment, instanceName, fmi3Error, "error",
@@ -271,17 +290,19 @@ void fmi3FreeInstance(fmi3Component c) {
     if (invalidState(comp, "fmi3FreeInstance", MASK_fmi3FreeInstance))
         return;
     FILTERED_LOG(comp, fmi3OK, LOG_FMI_CALL, "fmi3FreeInstance")
+    
+    // TODO: free variables
 
-    if (comp->r) comp->functions->freeMemory(c, comp->r);
-    if (comp->i) comp->functions->freeMemory(c, comp->i);
-    if (comp->b) comp->functions->freeMemory(c, comp->b);
-    if (comp->s) {
-        int i;
-        for (i = 0; i < NUMBER_OF_STRINGS; i++){
-            if (comp->s[i]) comp->functions->freeMemory(c, (void *)comp->s[i]);
-        }
-        comp->functions->freeMemory(c, (void *)comp->s);
-    }
+//    if (comp->r) comp->functions->freeMemory(c, comp->r);
+//    if (comp->i) comp->functions->freeMemory(c, comp->i);
+//    if (comp->b) comp->functions->freeMemory(c, comp->b);
+//    if (comp->s) {
+//        int i;
+//        for (i = 0; i < NUMBER_OF_STRINGS; i++){
+//            if (comp->s[i]) comp->functions->freeMemory(c, (void *)comp->s[i]);
+//        }
+//        comp->functions->freeMemory(c, (void *)comp->s);
+//    }
     if (comp->isPositive) comp->functions->freeMemory(c, comp->isPositive);
     if (comp->instanceName) comp->functions->freeMemory(c, (void *)comp->instanceName);
     if (comp->GUID) comp->functions->freeMemory(c, (void *)comp->GUID);
@@ -357,15 +378,13 @@ fmi3Status fmi3GetReal (fmi3Component c, const fmi3ValueReference vr[], size_t n
         calculateValues(comp);
         comp->isDirtyValues = fmi3False;
     }
-#if NUMBER_OF_REALS > 0
     for (i = 0; i < nvr; i++) {
-        if (vrOutOfRange(comp, "fmi3GetReal", vr[i], NUMBER_OF_REALS))
+        if (vrOutOfRange(comp, "fmi3GetReal", vr[i], 'r'))
             return fmi3Error;
-        value[i] = getReal(comp, vr[i]); // to be implemented by the includer of this file
+        value[i] = getReal(comp, vr[i])[0]; // to be implemented by the includer of this file
 
         FILTERED_LOG(comp, fmi3OK, LOG_FMI_CALL, "fmi3GetReal: #r%u# = %.16g", vr[i], value[i])
     }
-#endif
     return fmi3OK;
 }
 
@@ -383,9 +402,9 @@ fmi3Status fmi3GetInteger(fmi3Component c, const fmi3ValueReference vr[], size_t
         comp->isDirtyValues = fmi3False;
     }
     for (i = 0; i < nvr; i++) {
-        if (vrOutOfRange(comp, "fmi3GetInteger", vr[i], NUMBER_OF_INTEGERS))
+        if (vrOutOfRange(comp, "fmi3GetInteger", vr[i], 'i'))
             return fmi3Error;
-        value[i] = comp->i[vr[i]];
+        value[i] = *I(comp, vr[i]);
         FILTERED_LOG(comp, fmi3OK, LOG_FMI_CALL, "fmi3GetInteger: #i%u# = %d", vr[i], value[i])
     }
     return fmi3OK;
@@ -405,9 +424,9 @@ fmi3Status fmi3GetBoolean(fmi3Component c, const fmi3ValueReference vr[], size_t
         comp->isDirtyValues = fmi3False;
     }
     for (i = 0; i < nvr; i++) {
-        if (vrOutOfRange(comp, "fmi3GetBoolean", vr[i], NUMBER_OF_BOOLEANS))
+        if (vrOutOfRange(comp, "fmi3GetBoolean", vr[i], 'b'))
             return fmi3Error;
-        value[i] = comp->b[vr[i]];
+        value[i] = *B(comp, vr[i]);
         FILTERED_LOG(comp, fmi3OK, LOG_FMI_CALL, "fmi3GetBoolean: #b%u# = %s", vr[i], value[i]? "true" : "false")
     }
     return fmi3OK;
@@ -426,12 +445,12 @@ fmi3Status fmi3GetString (fmi3Component c, const fmi3ValueReference vr[], size_t
         calculateValues(comp);
         comp->isDirtyValues = fmi3False;
     }
-    for (i=0; i<nvr; i++) {
-        if (vrOutOfRange(comp, "fmi3GetString", vr[i], NUMBER_OF_STRINGS))
-            return fmi3Error;
-        value[i] = comp->s[vr[i]];
-        FILTERED_LOG(comp, fmi3OK, LOG_FMI_CALL, "fmi3GetString: #s%u# = '%s'", vr[i], value[i])
-    }
+//    for (i=0; i<nvr; i++) {
+//        if (vrOutOfRange(comp, "fmi3GetString", vr[i], NUMBER_OF_STRINGS))
+//            return fmi3Error;
+//        value[i] = comp->s[vr[i]];
+//        FILTERED_LOG(comp, fmi3OK, LOG_FMI_CALL, "fmi3GetString: #s%u# = '%s'", vr[i], value[i])
+//    }
     return fmi3OK;
 }
 
@@ -447,10 +466,10 @@ fmi3Status fmi3SetReal (fmi3Component c, const fmi3ValueReference vr[], size_t n
     FILTERED_LOG(comp, fmi3OK, LOG_FMI_CALL, "fmi3SetReal: nvr = %d", nvr)
     // no check whether setting the value is allowed in the current state
     for (i = 0; i < nvr; i++) {
-        if (vrOutOfRange(comp, "fmi3SetReal", vr[i], NUMBER_OF_REALS))
+        if (vrOutOfRange(comp, "fmi3SetReal", vr[i], 'r'))
             return fmi3Error;
         FILTERED_LOG(comp, fmi3OK, LOG_FMI_CALL, "fmi3SetReal: #r%d# = %.16g", vr[i], value[i])
-        comp->r[vr[i]] = value[i];
+        R(comp, vr[i])[0] = value[i];
     }
     if (nvr > 0) comp->isDirtyValues = fmi3True;
     return fmi3OK;
@@ -468,10 +487,10 @@ fmi3Status fmi3SetInteger(fmi3Component c, const fmi3ValueReference vr[], size_t
     FILTERED_LOG(comp, fmi3OK, LOG_FMI_CALL, "fmi3SetInteger: nvr = %d", nvr)
 
     for (i = 0; i < nvr; i++) {
-        if (vrOutOfRange(comp, "fmi3SetInteger", vr[i], NUMBER_OF_INTEGERS))
+        if (vrOutOfRange(comp, "fmi3SetInteger", vr[i], 'i'))
             return fmi3Error;
         FILTERED_LOG(comp, fmi3OK, LOG_FMI_CALL, "fmi3SetInteger: #i%d# = %d", vr[i], value[i])
-        comp->i[vr[i]] = value[i];
+        *I(comp, vr[i]) = value[i];
     }
     if (nvr > 0) comp->isDirtyValues = fmi3True;
     return fmi3OK;
@@ -489,10 +508,10 @@ fmi3Status fmi3SetBoolean(fmi3Component c, const fmi3ValueReference vr[], size_t
     FILTERED_LOG(comp, fmi3OK, LOG_FMI_CALL, "fmi3SetBoolean: nvr = %d", nvr)
 
     for (i = 0; i < nvr; i++) {
-        if (vrOutOfRange(comp, "fmi3SetBoolean", vr[i], NUMBER_OF_BOOLEANS))
+        if (vrOutOfRange(comp, "fmi3SetBoolean", vr[i], 'b'))
             return fmi3Error;
         FILTERED_LOG(comp, fmi3OK, LOG_FMI_CALL, "fmi3SetBoolean: #b%d# = %s", vr[i], value[i] ? "true" : "false")
-        comp->b[vr[i]] = value[i];
+        *B(comp, vr[i]) = value[i];
     }
     if (nvr > 0) comp->isDirtyValues = fmi3True;
     return fmi3OK;
@@ -509,29 +528,29 @@ fmi3Status fmi3SetString (fmi3Component c, const fmi3ValueReference vr[], size_t
         return fmi3Error;
     FILTERED_LOG(comp, fmi3OK, LOG_FMI_CALL, "fmi3SetString: nvr = %d", nvr)
 
-    for (i = 0; i < nvr; i++) {
-        char *string = (char *)comp->s[vr[i]];
-        if (vrOutOfRange(comp, "fmi3SetString", vr[i], NUMBER_OF_STRINGS))
-            return fmi3Error;
-        FILTERED_LOG(comp, fmi3OK, LOG_FMI_CALL, "fmi3SetString: #s%d# = '%s'", vr[i], value[i])
-
-        if (value[i] == NULL) {
-            if (string) comp->functions->freeMemory(c, string);
-            comp->s[vr[i]] = NULL;
-            FILTERED_LOG(comp, fmi3Warning, LOG_ERROR, "fmi3SetString: string argument value[%d] = NULL.", i);
-        } else {
-            if (string == NULL || strlen(string) < strlen(value[i])) {
-                if (string) comp->functions->freeMemory(c, string);
-                comp->s[vr[i]] = (char *)comp->functions->allocateMemory(c, 1 + strlen(value[i]), sizeof(char));
-                if (!comp->s[vr[i]]) {
-                    comp->state = modelError;
-                    FILTERED_LOG(comp, fmi3Error, LOG_ERROR, "fmi3SetString: Out of memory.")
-                    return fmi3Error;
-                }
-            }
-            strcpy((char *)comp->s[vr[i]], (char *)value[i]);
-        }
-    }
+//    for (i = 0; i < nvr; i++) {
+//        char *string = (char *)comp->s[vr[i]];
+//        if (vrOutOfRange(comp, "fmi3SetString", vr[i], NUMBER_OF_STRINGS))
+//            return fmi3Error;
+//        FILTERED_LOG(comp, fmi3OK, LOG_FMI_CALL, "fmi3SetString: #s%d# = '%s'", vr[i], value[i])
+//
+//        if (value[i] == NULL) {
+//            if (string) comp->functions->freeMemory(c, string);
+//            comp->s[vr[i]] = NULL;
+//            FILTERED_LOG(comp, fmi3Warning, LOG_ERROR, "fmi3SetString: string argument value[%d] = NULL.", i);
+//        } else {
+//            if (string == NULL || strlen(string) < strlen(value[i])) {
+//                if (string) comp->functions->freeMemory(c, string);
+//                comp->s[vr[i]] = (char *)comp->functions->allocateMemory(c, 1 + strlen(value[i]), sizeof(char));
+//                if (!comp->s[vr[i]]) {
+//                    comp->state = modelError;
+//                    FILTERED_LOG(comp, fmi3Error, LOG_ERROR, "fmi3SetString: Out of memory.")
+//                    return fmi3Error;
+//                }
+//            }
+//            strcpy((char *)comp->s[vr[i]], (char *)value[i]);
+//        }
+//    }
     if (nvr > 0) comp->isDirtyValues = fmi3True;
     return fmi3OK;
 }
@@ -647,11 +666,11 @@ fmi3Status fmi3DoStep(fmi3Component c, fmi3Real currentCommunicationPoint,
 
 #if NUMBER_OF_STATES>0
         for (i = 0; i < NUMBER_OF_STATES; i++) {
-            prevState[i] = r(vrStates[i]);
+            prevState[i] = R(comp, vrStates[i])[0];
         }
         for (i = 0; i < NUMBER_OF_STATES; i++) {
             fmi3ValueReference vr = vrStates[i];
-            r(vr) += h * getReal(comp, vr + 1); // forward Euler step
+            R(comp, vr)[0] += h * getReal(comp, vr + 1)[0]; // forward Euler step
         }
 #endif
 
@@ -840,14 +859,14 @@ fmi3Status fmi3SetContinuousStates(fmi3Component c, const fmi3Real x[], size_t n
         return fmi3Error;
     if (nullPointer(comp, "fmi3SetContinuousStates", "x[]", x))
         return fmi3Error;
-#if NUMBER_OF_STATES>0
-    for (i = 0; i < nx; i++) {
-        fmi3ValueReference vr = vrStates[i];
-        FILTERED_LOG(comp, fmi3OK, LOG_FMI_CALL, "fmi3SetContinuousStates: #r%d#=%.16g", vr, x[i])
-        assert(vr < NUMBER_OF_REALS);
-        comp->r[vr] = x[i];
-    }
-#endif
+//#if NUMBER_OF_STATES>0
+//    for (i = 0; i < nx; i++) {
+//        fmi3ValueReference vr = vrStates[i];
+//        FILTERED_LOG(comp, fmi3OK, LOG_FMI_CALL, "fmi3SetContinuousStates: #r%d#=%.16g", vr, x[i])
+//        assert(vr < NUMBER_OF_REALS);
+//        comp->r[vr] = x[i];
+//    }
+//#endif
     return fmi3OK;
 }
 
@@ -864,7 +883,7 @@ fmi3Status fmi3GetDerivatives(fmi3Component c, fmi3Real derivatives[], size_t nx
 #if NUMBER_OF_STATES>0
     for (i = 0; i < nx; i++) {
         fmi3ValueReference vr = vrStates[i] + 1;
-        derivatives[i] = getReal(comp, vr); // to be implemented by the includer of this file
+        derivatives[i] = getReal(comp, vr)[0]; // to be implemented by the includer of this file
         FILTERED_LOG(comp, fmi3OK, LOG_FMI_CALL, "fmi3GetDerivatives: #r%d# = %.16g", vr, derivatives[i])
     }
 #endif
@@ -899,7 +918,7 @@ fmi3Status fmi3GetContinuousStates(fmi3Component c, fmi3Real states[], size_t nx
 #if NUMBER_OF_STATES>0
     for (i = 0; i < nx; i++) {
         fmi3ValueReference vr = vrStates[i];
-        states[i] = getReal(comp, vr); // to be implemented by the includer of this file
+        states[i] = getReal(comp, vr)[0]; // to be implemented by the includer of this file
         FILTERED_LOG(comp, fmi3OK, LOG_FMI_CALL, "fmi3GetContinuousStates: #r%u# = %.16g", vr, states[i])
     }
 #endif

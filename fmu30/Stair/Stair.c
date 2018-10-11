@@ -3,17 +3,19 @@
  * Copyright QTronic GmbH. All rights reserved.
  * ---------------------------------------------------------------------------*/
 
+#include <string.h>  // for size_t
+
 // define class name and unique id
 #define MODEL_IDENTIFIER inc
 #define MODEL_GUID "{8c4e810f-3df3-4a00-8276-176fa3c9f008}"
 
 // define model size
-#define NUMBER_OF_REALS 0
-#define NUMBER_OF_INTEGERS 1
-#define NUMBER_OF_BOOLEANS 0
-#define NUMBER_OF_STRINGS 0
 #define NUMBER_OF_STATES 0
 #define NUMBER_OF_EVENT_INDICATORS 0
+
+#define N_VARIABLES 1
+char   s_variableTypes[N_VARIABLES] = "i";
+size_t s_variableSizes[N_VARIABLES] = { 1 };
 
 // include fmu header files, typedefs and macros
 #include "fmu3Template.h"

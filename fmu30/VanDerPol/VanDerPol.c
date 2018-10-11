@@ -9,17 +9,19 @@
  * Copyright QTronic GmbH. All rights reserved.
  * ---------------------------------------------------------------------------*/
 
+#include <string.h>  // for size_t
+
 // define class name and unique id
 #define MODEL_IDENTIFIER vanDerPol
 #define MODEL_GUID "{8c4e810f-3da3-4a00-8276-176fa3c9f000}"
 
 // define model size
-#define NUMBER_OF_REALS 5
-#define NUMBER_OF_INTEGERS 0
-#define NUMBER_OF_BOOLEANS 0
-#define NUMBER_OF_STRINGS 0
 #define NUMBER_OF_STATES 2
 #define NUMBER_OF_EVENT_INDICATORS 0
+
+#define N_VARIABLES 5
+char   s_variableTypes[N_VARIABLES] = "rrrrr";
+size_t s_variableSizes[N_VARIABLES] = { 1, 1, 1, 1, 1};
 
 // include fmu header files, typedefs and macros
 #include "fmu3Template.h"
@@ -58,13 +60,19 @@ void calculateValues(ModelInstance *comp) {
 }
 
 // called by fmi2GetReal, fmi2GetContinuousStates and fmi2GetDerivatives
-fmi3Real getReal(ModelInstance* comp, fmi3ValueReference vr){
+fmi3Real* getReal(ModelInstance* comp, fmi3ValueReference vr){
     switch (vr) {
-        case x0_     : return r(x0_);
-        case x1_     : return r(x1_);
-        case der_x0_ : return r(x1_);
-        case der_x1_ : return r(mu_) * ((1.0-r(x0_)*r(x0_))*r(x1_)) - r(x0_);
-        case mu_     : return r(mu_);
+        case x0_:
+            return R(comp, x0_);
+        case x1_:
+            return R(comp, x1_);
+        case der_x0_:
+            return R(comp, x1_);
+        case der_x1_:
+            r(der_x1_) = (r(mu_)) * ((1.0 - (r(x0_)) * (r(x0_))) * (r(x1_)) - (r(x0_)));
+            return R(comp, der_x1_);
+        case mu_:
+            return R(comp, mu_);
         default: return 0;
     }
 }

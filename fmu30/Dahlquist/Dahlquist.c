@@ -6,17 +6,19 @@
  * Copyright QTronic GmbH. All rights reserved.
  * ---------------------------------------------------------------------------*/
 
+#include <string.h>  // for size_t
+
 // define class name and unique id
 #define MODEL_IDENTIFIER dq
 #define MODEL_GUID "{8c4e810f-3df3-4a00-8276-176fa3c9f000}"
 
 // define model size
-#define NUMBER_OF_REALS 3
-#define NUMBER_OF_INTEGERS 0
-#define NUMBER_OF_BOOLEANS 0
-#define NUMBER_OF_STRINGS 0
 #define NUMBER_OF_STATES 1
 #define NUMBER_OF_EVENT_INDICATORS 0
+
+#define N_VARIABLES 3
+char   s_variableTypes[N_VARIABLES] = "rrr";
+size_t s_variableSizes[N_VARIABLES] = { 1, 1, 1 };
 
 // include fmu header files, typedefs and macros
 #include "fmu3Template.h"
@@ -52,12 +54,17 @@ void calculateValues(ModelInstance *comp) {
 }
 
 // called by fmi2GetReal, fmi2GetContinuousStates and fmi2GetDerivatives
-fmi3Real getReal(ModelInstance* comp, fmi3ValueReference vr){
+fmi3Real* getReal(ModelInstance* comp, fmi3ValueReference vr){
     switch (vr) {
-        case x_     : return r(x_);
-        case der_x_ : return - r(k_) * r(x_);
-        case k_     : return r(k_);
-        default: return 0;
+        case x_:
+            return R(comp, x_);
+        case der_x_ :
+            r(der_x_) = -(r(x_)) * (r(x_));
+            return R(comp, der_x_);
+        case k_:
+            return R(comp, k_);
+        default:
+            return NULL;
     }
 }
 

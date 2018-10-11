@@ -22,10 +22,10 @@ extern "C" {
 #endif
 
 // macros used to define variables
-#define  r(vr) comp->r[vr]
-#define  i(vr) comp->i[vr]
-#define  b(vr) comp->b[vr]
-#define  s(vr) comp->s[vr]
+#define  r(vr) (*R(comp, vr))
+#define  i(vr) (*I(comp, vr))
+#define  b(vr) (*B(comp, vr))
+//#define  s(vr) comp->s[vr]
 #define pos(z) comp->isPositive[z]
 #define copy(vr, value, size) setString(comp, vr, value, size)
 
@@ -144,10 +144,9 @@ typedef enum {
 #define MASK_fmi3GetStringStatus         MASK_fmi3GetStatus
 
 typedef struct {
-    fmi3Real    *r;
-    fmi3Integer *i;
-    fmi3Boolean *b;
-    fmi3String  *s;
+    
+    void   *variables[N_VARIABLES];
+    
     fmi3Boolean *isPositive;
 
     fmi3Real time;
@@ -165,6 +164,18 @@ typedef struct {
     fmi3Boolean isNewEventIteration;
 } ModelInstance;
 
+fmi3Real* R(ModelInstance *comp, int vr) {
+    return comp->variables[vr];
+}
+    
+fmi3Integer* I(ModelInstance *comp, int vr) {
+    return comp->variables[vr];
+}
+ 
+fmi3Boolean* B(ModelInstance *comp, int vr) {
+    return comp->variables[vr];
+}
+    
 #ifdef __cplusplus
 } // closing brace for extern "C"
 #endif

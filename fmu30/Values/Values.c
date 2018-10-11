@@ -4,17 +4,19 @@
  * Copyright QTronic GmbH. All rights reserved.
  * ---------------------------------------------------------------------------*/
 
+#include <string.h>  // for size_t
+
 // define class name and unique id
 #define MODEL_IDENTIFIER values
 #define MODEL_GUID "{8c4e810f-3df3-4a00-8276-176fa3c9f004}"
 
 // define model size
-#define NUMBER_OF_REALS 2
-#define NUMBER_OF_INTEGERS 2
-#define NUMBER_OF_BOOLEANS 2
-#define NUMBER_OF_STRINGS 2
 #define NUMBER_OF_STATES 1
 #define NUMBER_OF_EVENT_INDICATORS 0
+
+#define N_VARIABLES 8
+char   s_variableTypes[N_VARIABLES] = "rriibbss";
+size_t s_variableSizes[N_VARIABLES] = { 1, 1, 1, 1, 1, 1, 1, 1 };
 
 // include fmu header files, typedefs and macros
 #include "fmu3Template.h"
@@ -26,12 +28,12 @@
 // - if k is the vr of a real state, then k+1 is the vr of its derivative
 #define x_          0
 #define der_x_      1
-#define int_in_     0
-#define int_out_    1
-#define bool_in_    0
-#define bool_out_   1
-#define string_in_  0
-#define string_out_ 1
+#define int_in_     2
+#define int_out_    3
+#define bool_in_    4
+#define bool_out_   5
+#define string_in_  6
+#define string_out_ 7
 
 // define state vector as vector of value references
 #define STATES { x_ }
@@ -66,16 +68,20 @@ void calculateValues(ModelInstance *comp) {
 }
 
 // called by fmi2GetReal, fmi2GetContinuousStates and fmi2GetDerivatives
-fmi3Real getReal(ModelInstance *comp, fmi3ValueReference vr){
+fmi3Real* getReal(ModelInstance *comp, fmi3ValueReference vr){
     switch (vr) {
-        case x_     : return   r(x_);
-        case der_x_ : return - r(x_);
+        case x_:
+            return R(comp, x_);
+        case der_x_:
+            r(der_x_) = - r(x_);
+            return R(comp, der_x_);
         default: return 0;
     }
 }
 
 // used to set the next time event, if any.
 void eventUpdate(ModelInstance *comp, fmi3EventInfo *eventInfo, int isTimeEvent, int isNewEventIteration) {
+    
     if (isTimeEvent) {
         eventInfo->nextEventTimeDefined = fmi3True;
         eventInfo->nextEventTime        = 1 + comp->time;

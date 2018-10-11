@@ -21,6 +21,9 @@ else ()
     set (FMI_PLATFORM ${FMI_PLATFORM}32)
 endif ()
 
+#add_executable(fmurun fmurun.c)
+#target_include_directories(fmurun PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include")
+
 foreach(MODEL_NAME BouncingBall Dahlquist Stair Values VanDerPol)
 
 set(TARGET_NAME ${MODEL_NAME})
