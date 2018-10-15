@@ -365,169 +365,265 @@ fmi3Status fmi3SetDebugLogging(fmi3Component c, fmi3Boolean loggingOn, size_t nC
     return fmi3OK;
 }
 
-fmi3Status fmi3GetReal (fmi3Component c, const fmi3ValueReference vr[], size_t nvr, fmi3Real value[], size_t nValues) {
-    int i;
+fmi3Status fmi3GetReal(fmi3Component c, const fmi3ValueReference vr[], size_t nvr, fmi3Real value[], size_t nValues) {
+    
+    int i, j, k = 0;
+    
     ModelInstance *comp = (ModelInstance *)c;
-    if (invalidState(comp, "fmi3GetReal", MASK_fmi3GetReal))
-        return fmi3Error;
-    if (nvr > 0 && nullPointer(comp, "fmi3GetReal", "vr[]", vr))
-        return fmi3Error;
-    if (nvr > 0 && nullPointer(comp, "fmi3GetReal", "value[]", value))
-        return fmi3Error;
+    
+    if (invalidState(comp, "fmi3GetReal", MASK_fmi3GetReal)) return fmi3Error;
+    
+    if (nvr > 0 && nullPointer(comp, "fmi3GetReal", "vr[]", vr)) return fmi3Error;
+    
+    if (nvr > 0 && nullPointer(comp, "fmi3GetReal", "value[]", value)) return fmi3Error;
+    
     if (nvr > 0 && comp->isDirtyValues) {
         calculateValues(comp);
         comp->isDirtyValues = fmi3False;
     }
+    
     for (i = 0; i < nvr; i++) {
-        if (vrOutOfRange(comp, "fmi3GetReal", vr[i], 'r'))
-            return fmi3Error;
-        value[i] = getReal(comp, vr[i])[0]; // to be implemented by the includer of this file
+        
+        if (vrOutOfRange(comp, "fmi3GetReal", vr[i], 'r')) return fmi3Error;
+        
+        for (j = 0; j < s_variableSizes[i]; j++) {
+            value[k++] = getReal(comp, vr[i])[j]; // to be implemented by the includer of this file
+        }
 
         FILTERED_LOG(comp, fmi3OK, LOG_FMI_CALL, "fmi3GetReal: #r%u# = %.16g", vr[i], value[i])
     }
+    
     return fmi3OK;
 }
 
 fmi3Status fmi3GetInteger(fmi3Component c, const fmi3ValueReference vr[], size_t nvr, fmi3Integer value[], size_t nValues) {
-    int i;
+    
+    int i, j, k = 0;
+    
     ModelInstance *comp = (ModelInstance *)c;
-    if (invalidState(comp, "fmi3GetInteger", MASK_fmi3GetInteger))
-        return fmi3Error;
-    if (nvr > 0 && nullPointer(comp, "fmi3GetInteger", "vr[]", vr))
-            return fmi3Error;
-    if (nvr > 0 && nullPointer(comp, "fmi3GetInteger", "value[]", value))
-            return fmi3Error;
+    
+    if (invalidState(comp, "fmi3GetInteger", MASK_fmi3GetInteger)) return fmi3Error;
+    
+    if (nvr > 0 && nullPointer(comp, "fmi3GetInteger", "vr[]", vr)) return fmi3Error;
+    
+    if (nvr > 0 && nullPointer(comp, "fmi3GetInteger", "value[]", value)) return fmi3Error;
+    
     if (nvr > 0 && comp->isDirtyValues) {
         calculateValues(comp);
         comp->isDirtyValues = fmi3False;
     }
+    
     for (i = 0; i < nvr; i++) {
-        if (vrOutOfRange(comp, "fmi3GetInteger", vr[i], 'i'))
-            return fmi3Error;
-        value[i] = *I(comp, vr[i]);
+        
+        if (vrOutOfRange(comp, "fmi3GetInteger", vr[i], 'i')) return fmi3Error;
+        
+        for (j = 0; j < s_variableSizes[i]; j++) {
+            value[k++] = I(comp, vr[i])[j];
+        }
+        
         FILTERED_LOG(comp, fmi3OK, LOG_FMI_CALL, "fmi3GetInteger: #i%u# = %d", vr[i], value[i])
     }
+
     return fmi3OK;
 }
 
 fmi3Status fmi3GetBoolean(fmi3Component c, const fmi3ValueReference vr[], size_t nvr, fmi3Boolean value[], size_t nValues) {
-    int i;
+    
+    int i, j, k = 0;
+    
     ModelInstance *comp = (ModelInstance *)c;
-    if (invalidState(comp, "fmi3GetBoolean", MASK_fmi3GetBoolean))
-        return fmi3Error;
-    if (nvr > 0 && nullPointer(comp, "fmi3GetBoolean", "vr[]", vr))
-            return fmi3Error;
-    if (nvr > 0 && nullPointer(comp, "fmi3GetBoolean", "value[]", value))
-            return fmi3Error;
+    
+    if (invalidState(comp, "fmi3GetBoolean", MASK_fmi3GetBoolean)) return fmi3Error;
+    
+    if (nvr > 0 && nullPointer(comp, "fmi3GetBoolean", "vr[]", vr)) return fmi3Error;
+    
+    if (nvr > 0 && nullPointer(comp, "fmi3GetBoolean", "value[]", value)) return fmi3Error;
+    
     if (nvr > 0 && comp->isDirtyValues) {
         calculateValues(comp);
         comp->isDirtyValues = fmi3False;
     }
+
     for (i = 0; i < nvr; i++) {
-        if (vrOutOfRange(comp, "fmi3GetBoolean", vr[i], 'b'))
-            return fmi3Error;
-        value[i] = *B(comp, vr[i]);
-        FILTERED_LOG(comp, fmi3OK, LOG_FMI_CALL, "fmi3GetBoolean: #b%u# = %s", vr[i], value[i]? "true" : "false")
+        
+        if (vrOutOfRange(comp, "fmi3GetBoolean", vr[i], 'b')) return fmi3Error;
+        
+        for (j = 0; j < s_variableSizes[i]; j++) {
+            value[k++] = B(comp, vr[i])[j];
+        }
+        
+        FILTERED_LOG(comp, fmi3OK, LOG_FMI_CALL, "fmi3GetBoolean: #i%u# = %d", vr[i], value[i])
     }
+
     return fmi3OK;
 }
 
-fmi3Status fmi3GetString (fmi3Component c, const fmi3ValueReference vr[], size_t nvr, fmi3String value[], size_t nValues) {
-    int i;
+fmi3Status fmi3GetString(fmi3Component c, const fmi3ValueReference vr[], size_t nvr, fmi3String value[], size_t nValues) {
+    
+    int i, j, k = 0;
+
     ModelInstance *comp = (ModelInstance *)c;
-    if (invalidState(comp, "fmi3GetString", MASK_fmi3GetString))
-        return fmi3Error;
-    if (nvr>0 && nullPointer(comp, "fmi3GetString", "vr[]", vr))
-            return fmi3Error;
-    if (nvr>0 && nullPointer(comp, "fmi3GetString", "value[]", value))
-            return fmi3Error;
+    
+    if (invalidState(comp, "fmi3GetString", MASK_fmi3GetString)) return fmi3Error;
+    
+    if (nvr>0 && nullPointer(comp, "fmi3GetString", "vr[]", vr)) return fmi3Error;
+    
+    if (nvr>0 && nullPointer(comp, "fmi3GetString", "value[]", value)) return fmi3Error;
+    
     if (nvr > 0 && comp->isDirtyValues) {
         calculateValues(comp);
         comp->isDirtyValues = fmi3False;
     }
-//    for (i=0; i<nvr; i++) {
-//        if (vrOutOfRange(comp, "fmi3GetString", vr[i], NUMBER_OF_STRINGS))
-//            return fmi3Error;
-//        value[i] = comp->s[vr[i]];
-//        FILTERED_LOG(comp, fmi3OK, LOG_FMI_CALL, "fmi3GetString: #s%u# = '%s'", vr[i], value[i])
-//    }
+    
+    for (i = 0; i < nvr; i++) {
+        
+        if (vrOutOfRange(comp, "fmi3GetString", vr[i], 'b')) return fmi3Error;
+        
+        for (j = 0; j < s_variableSizes[i]; j++) {
+            value[k++] = S(comp, vr[i])[j];
+        }
+        
+        FILTERED_LOG(comp, fmi3OK, LOG_FMI_CALL, "fmi3GetString: #s%u# = \"%s\"", vr[i], value[i])
+    }
+    
     return fmi3OK;
 }
 
-fmi3Status fmi3SetReal (fmi3Component c, const fmi3ValueReference vr[], size_t nvr, const fmi3Real value[], size_t nValues) {
-    int i;
+fmi3Status fmi3SetReal(fmi3Component c, const fmi3ValueReference vr[], size_t nvr, const fmi3Real value[], size_t nValues) {
+    
+    int i, j, k = 0;
+    
     ModelInstance *comp = (ModelInstance *)c;
-    if (invalidState(comp, "fmi3SetReal", MASK_fmi3SetReal))
-        return fmi3Error;
-    if (nvr > 0 && nullPointer(comp, "fmi3SetReal", "vr[]", vr))
-        return fmi3Error;
-    if (nvr > 0 && nullPointer(comp, "fmi3SetReal", "value[]", value))
-        return fmi3Error;
+    
+    if (invalidState(comp, "fmi3SetReal", MASK_fmi3SetReal)) return fmi3Error;
+    
+    if (nvr > 0 && nullPointer(comp, "fmi3SetReal", "vr[]", vr)) return fmi3Error;
+    
+    if (nvr > 0 && nullPointer(comp, "fmi3SetReal", "value[]", value)) return fmi3Error;
+    
     FILTERED_LOG(comp, fmi3OK, LOG_FMI_CALL, "fmi3SetReal: nvr = %d", nvr)
+    
     // no check whether setting the value is allowed in the current state
     for (i = 0; i < nvr; i++) {
-        if (vrOutOfRange(comp, "fmi3SetReal", vr[i], 'r'))
-            return fmi3Error;
-        FILTERED_LOG(comp, fmi3OK, LOG_FMI_CALL, "fmi3SetReal: #r%d# = %.16g", vr[i], value[i])
-        R(comp, vr[i])[0] = value[i];
+        
+        if (vrOutOfRange(comp, "fmi3SetRoolean", vr[i], 'r')) return fmi3Error;
+        
+        for (j = 0; j < s_variableSizes[i]; j++) {
+            R(comp, vr[i])[j] = value[k++];
+        }
+        
+        FILTERED_LOG(comp, fmi3OK, LOG_FMI_CALL, "fmi3SetReal: #r%u# = %.16g", vr[i], value[i])
     }
+
     if (nvr > 0) comp->isDirtyValues = fmi3True;
+    
     return fmi3OK;
 }
 
 fmi3Status fmi3SetInteger(fmi3Component c, const fmi3ValueReference vr[], size_t nvr, const fmi3Integer value[], size_t nValues) {
-    int i;
+    int i, j, k = 0;
+    
     ModelInstance *comp = (ModelInstance *)c;
-    if (invalidState(comp, "fmi3SetInteger", MASK_fmi3SetInteger))
-        return fmi3Error;
-    if (nvr > 0 && nullPointer(comp, "fmi3SetInteger", "vr[]", vr))
-        return fmi3Error;
-    if (nvr > 0 && nullPointer(comp, "fmi3SetInteger", "value[]", value))
-        return fmi3Error;
+    
+    if (invalidState(comp, "fmi3SetInteger", MASK_fmi3SetInteger)) return fmi3Error;
+    
+    if (nvr > 0 && nullPointer(comp, "fmi3SetInteger", "vr[]", vr)) return fmi3Error;
+    
+    if (nvr > 0 && nullPointer(comp, "fmi3SetInteger", "value[]", value)) return fmi3Error;
+    
     FILTERED_LOG(comp, fmi3OK, LOG_FMI_CALL, "fmi3SetInteger: nvr = %d", nvr)
 
     for (i = 0; i < nvr; i++) {
-        if (vrOutOfRange(comp, "fmi3SetInteger", vr[i], 'i'))
-            return fmi3Error;
-        FILTERED_LOG(comp, fmi3OK, LOG_FMI_CALL, "fmi3SetInteger: #i%d# = %d", vr[i], value[i])
-        *I(comp, vr[i]) = value[i];
+        
+        if (vrOutOfRange(comp, "fmi3SetInteger", vr[i], 'i')) return fmi3Error;
+        
+        for (j = 0; j < s_variableSizes[i]; j++) {
+            I(comp, vr[i])[j] = value[k++];
+        }
+        
+        FILTERED_LOG(comp, fmi3OK, LOG_FMI_CALL, "fmi3SetInteger: #i%u# = %d", vr[i], value[i])
     }
+    
     if (nvr > 0) comp->isDirtyValues = fmi3True;
+    
     return fmi3OK;
 }
 
 fmi3Status fmi3SetBoolean(fmi3Component c, const fmi3ValueReference vr[], size_t nvr, const fmi3Boolean value[], size_t nValues) {
-    int i;
+    
+    int i, j, k = 0;
+
     ModelInstance *comp = (ModelInstance *)c;
-    if (invalidState(comp, "fmi3SetBoolean", MASK_fmi3SetBoolean))
-        return fmi3Error;
-    if (nvr>0 && nullPointer(comp, "fmi3SetBoolean", "vr[]", vr))
-        return fmi3Error;
-    if (nvr>0 && nullPointer(comp, "fmi3SetBoolean", "value[]", value))
-        return fmi3Error;
+    
+    if (invalidState(comp, "fmi3SetBoolean", MASK_fmi3SetBoolean)) return fmi3Error;
+    
+    if (nvr > 0 && nullPointer(comp, "fmi3SetBoolean", "vr[]", vr)) return fmi3Error;
+    
+    if (nvr > 0 && nullPointer(comp, "fmi3SetBoolean", "value[]", value)) return fmi3Error;
+    
     FILTERED_LOG(comp, fmi3OK, LOG_FMI_CALL, "fmi3SetBoolean: nvr = %d", nvr)
 
     for (i = 0; i < nvr; i++) {
-        if (vrOutOfRange(comp, "fmi3SetBoolean", vr[i], 'b'))
-            return fmi3Error;
-        FILTERED_LOG(comp, fmi3OK, LOG_FMI_CALL, "fmi3SetBoolean: #b%d# = %s", vr[i], value[i] ? "true" : "false")
-        *B(comp, vr[i]) = value[i];
+        
+        if (vrOutOfRange(comp, "fmi3SetBoolean", vr[i], 'i')) return fmi3Error;
+        
+        for (j = 0; j < s_variableSizes[i]; j++) {
+            B(comp, vr[i])[j] = value[k++];
+        }
+        
+        FILTERED_LOG(comp, fmi3OK, LOG_FMI_CALL, "fmi3SetBoolean: #b%u# = %s", vr[i], value[i] ? "true" : "false")
     }
+
     if (nvr > 0) comp->isDirtyValues = fmi3True;
+    
     return fmi3OK;
 }
 
 fmi3Status fmi3SetString (fmi3Component c, const fmi3ValueReference vr[], size_t nvr, const fmi3String value[], size_t nValues) {
-    int i;
+
+    int i, j, k = 0;
+    
     ModelInstance *comp = (ModelInstance *)c;
-    if (invalidState(comp, "fmi3SetString", MASK_fmi3SetString))
-        return fmi3Error;
-    if (nvr>0 && nullPointer(comp, "fmi3SetString", "vr[]", vr))
-        return fmi3Error;
-    if (nvr>0 && nullPointer(comp, "fmi3SetString", "value[]", value))
-        return fmi3Error;
+    
+    if (invalidState(comp, "fmi3SetString", MASK_fmi3SetString)) return fmi3Error;
+    
+    if (nvr>0 && nullPointer(comp, "fmi3SetString", "vr[]", vr)) return fmi3Error;
+    
+    if (nvr>0 && nullPointer(comp, "fmi3SetString", "value[]", value)) return fmi3Error;
+    
     FILTERED_LOG(comp, fmi3OK, LOG_FMI_CALL, "fmi3SetString: nvr = %d", nvr)
 
+    for (i = 0; i < nvr; i++) {
+        
+        if (vrOutOfRange(comp, "fmi3SetString", vr[i], 's')) return fmi3Error;
+        
+        for (j = 0; j < s_variableSizes[i]; j++) {
+            
+//            char *string = (char *)comp->s[vr[i]];
+//
+//            if (value[k] == NULL) {
+//                if (string) comp->functions->freeMemory(c, string);
+//                comp->s[vr[i]] = NULL;
+//                FILTERED_LOG(comp, fmi3Warning, LOG_ERROR, "fmi3SetString: string argument value[%d] = NULL.", i);
+//            } else {
+//                if (string == NULL || strlen(string) < strlen(value[i])) {
+//                    if (string) comp->functions->freeMemory(c, string);
+//                    comp->s[vr[i]] = (char *)comp->functions->allocateMemory(c, 1 + strlen(value[i]), sizeof(char));
+//                    if (!comp->s[vr[i]]) {
+//                        comp->state = modelError;
+//                        FILTERED_LOG(comp, fmi3Error, LOG_ERROR, "fmi3SetString: Out of memory.")
+//                        return fmi3Error;
+//                    }
+//                }
+//                strcpy((char *)comp->s[vr[i]], (char *)value[i]);
+//            }
+            
+            //S(comp, vr[i])[j] = value[k++];
+        }
+        
+        FILTERED_LOG(comp, fmi3OK, LOG_FMI_CALL, "fmi3SetBoolean: #b%u# = %s", vr[i], value[i] ? "true" : "false")
+    }
+    
 //    for (i = 0; i < nvr; i++) {
 //        char *string = (char *)comp->s[vr[i]];
 //        if (vrOutOfRange(comp, "fmi3SetString", vr[i], NUMBER_OF_STRINGS))
@@ -551,7 +647,9 @@ fmi3Status fmi3SetString (fmi3Component c, const fmi3ValueReference vr[], size_t
 //            strcpy((char *)comp->s[vr[i]], (char *)value[i]);
 //        }
 //    }
+    
     if (nvr > 0) comp->isDirtyValues = fmi3True;
+    
     return fmi3OK;
 }
 

@@ -176,6 +176,10 @@ fmi3Boolean* B(ModelInstance *comp, int vr) {
     return comp->variables[vr];
 }
     
+fmi3String* S(ModelInstance *comp, int vr) {
+    return comp->variables[vr];
+}
+    
 #ifdef __cplusplus
 } // closing brace for extern "C"
 #endif

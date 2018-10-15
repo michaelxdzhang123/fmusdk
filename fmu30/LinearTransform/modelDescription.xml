@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<fmiModelDescription fmiVersion="3.0-dev" modelName="dq" guid="{8c4e810f-3df3-4a00-8276-176fa3c9f001}" numberOfEventIndicators="0">
+
+  <CoSimulation modelIdentifier="LinearTransform" canHandleVariableCommunicationStepSize="true">
+    <SourceFiles>
+      <File name="LinearTransform.c" />
+    </SourceFiles>
+  </CoSimulation>
+
+  <ModelExchange modelIdentifier="LinearTransform">
+    <SourceFiles>
+      <File name="LinearTransform.c" />
+    </SourceFiles>
+  </ModelExchange>
+
+  <LogCategories>
+    <Category name="logAll" />
+    <Category name="logError" />
+    <Category name="logFmiCall" />
+    <Category name="logEvent" />
+  </LogCategories>
+
+  <DefaultExperiment startTime="0" stopTime="5"></DefaultExperiment>
+
+  <ModelVariables>
+
+    <Variable name="u" valueReference="0" description="the input" causality="input" variability="continuous" initial="exact">
+      <Real start="-0.1 -0.2 -0.3"/>
+      <Dimensions>
+        <Dimension start="3"/>
+      </Dimensions>
+    </Variable>
+
+    <Variable name="T" valueReference="1" description="the matrix" causality="parameter" variability="tunable" initial="exact">
+      <Real start="-1 0 0 0 -1 0 0 0 -1"/>
+      <Dimensions>
+        <Dimension start="3"/>
+        <Dimension start="3"/>
+      </Dimensions>
+    </Variable>
+
+    <Variable name="y" valueReference="2" description="the output" causality="output" variability="continuous" initial="exact">
+      <Real start="0.1 0.2 0.3"/>
+      <Dimensions>
+        <Dimension start="3"/>
+      </Dimensions>
+    </Variable>
+
+    <Variable name="i_in" valueReference="3" description="Integer input" causality="input">
+      <Integer start="-1 1"/>
+      <Dimensions>
+        <Dimension start="2"/>
+      </Dimensions>
+    </Variable>
+
+    <Variable name="i_out" valueReference="4" description="Integer output" causality="output">
+      <Integer start="-1 1"/>
+      <Dimensions>
+        <Dimension start="2"/>
+      </Dimensions>
+    </Variable>
+
+    <Variable name="b_in" valueReference="5" description="Boolean input" causality="input">
+      <Boolean start="false true"/>
+      <Dimensions>
+        <Dimension start="2"/>
+      </Dimensions>
+    </Variable>
+
+    <Variable name="b_out" valueReference="6" description="Boolean output" causality="output">
+      <Boolean start="false true"/>
+      <Dimensions>
+        <Dimension start="2"/>
+      </Dimensions>
+    </Variable>
+
+  </ModelVariables>
+
+  <ModelStructure>
+    <!-- <Derivatives>
+      <Unknown valueReference="1" />
+    </Derivatives>
+    <InitialUnknowns>
+      <Unknown valueReference="1" />
+    </InitialUnknowns> -->
+  </ModelStructure>
+
+</fmiModelDescription>

@@ -24,7 +24,7 @@ endif ()
 #add_executable(fmurun fmurun.c)
 #target_include_directories(fmurun PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include")
 
-foreach(MODEL_NAME BouncingBall Dahlquist Stair Values VanDerPol)
+foreach(MODEL_NAME BouncingBall Dahlquist LinearTransform Stair Values VanDerPol)
 
 set(TARGET_NAME ${MODEL_NAME})
 
