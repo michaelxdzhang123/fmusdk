@@ -176,7 +176,7 @@ fmi3Boolean* B(ModelInstance *comp, int vr) {
     return comp->variables[vr];
 }
     
-fmi3String* S(ModelInstance *comp, int vr) {
+char** S(ModelInstance *comp, int vr) {
     return comp->variables[vr];
 }
     

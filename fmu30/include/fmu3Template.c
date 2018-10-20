@@ -587,9 +587,9 @@ fmi3Status fmi3SetString (fmi3Component c, const fmi3ValueReference vr[], size_t
     
     if (invalidState(comp, "fmi3SetString", MASK_fmi3SetString)) return fmi3Error;
     
-    if (nvr>0 && nullPointer(comp, "fmi3SetString", "vr[]", vr)) return fmi3Error;
+    if (nvr > 0 && nullPointer(comp, "fmi3SetString", "vr[]", vr)) return fmi3Error;
     
-    if (nvr>0 && nullPointer(comp, "fmi3SetString", "value[]", value)) return fmi3Error;
+    if (nvr > 0 && nullPointer(comp, "fmi3SetString", "value[]", value)) return fmi3Error;
     
     FILTERED_LOG(comp, fmi3OK, LOG_FMI_CALL, "fmi3SetString: nvr = %d", nvr)
 
@@ -599,54 +599,37 @@ fmi3Status fmi3SetString (fmi3Component c, const fmi3ValueReference vr[], size_t
         
         for (j = 0; j < s_variableSizes[i]; j++) {
             
-//            char *string = (char *)comp->s[vr[i]];
-//
-//            if (value[k] == NULL) {
-//                if (string) comp->functions->freeMemory(c, string);
-//                comp->s[vr[i]] = NULL;
-//                FILTERED_LOG(comp, fmi3Warning, LOG_ERROR, "fmi3SetString: string argument value[%d] = NULL.", i);
-//            } else {
-//                if (string == NULL || strlen(string) < strlen(value[i])) {
-//                    if (string) comp->functions->freeMemory(c, string);
-//                    comp->s[vr[i]] = (char *)comp->functions->allocateMemory(c, 1 + strlen(value[i]), sizeof(char));
-//                    if (!comp->s[vr[i]]) {
-//                        comp->state = modelError;
-//                        FILTERED_LOG(comp, fmi3Error, LOG_ERROR, "fmi3SetString: Out of memory.")
-//                        return fmi3Error;
-//                    }
-//                }
-//                strcpy((char *)comp->s[vr[i]], (char *)value[i]);
-//            }
+            char *string = S(comp, vr[i])[j];
+
+            if (value[k] == NULL) {
+                
+                if (string) comp->functions->freeMemory(c, string);
+                
+                S(comp, vr[i])[j] = NULL;
+                
+                FILTERED_LOG(comp, fmi3Warning, LOG_ERROR, "fmi3SetString: string argument value[%d] = NULL.", i);
+                
+            } else {
+                
+                if (string == NULL || strlen(string) < strlen(value[k])) {
+                    
+                    if (string) comp->functions->freeMemory(c, string);
+                    
+                    S(comp, vr[i])[j] = (char *)comp->functions->allocateMemory(c, 1 + strlen(value[i]), sizeof(char));
+                    
+                    if (!S(comp, vr[i])[j]) {
+                        comp->state = modelError;
+                        FILTERED_LOG(comp, fmi3Error, LOG_ERROR, "fmi3SetString: Out of memory.")
+                        return fmi3Error;
+                    }
+                }
+                
+                strcpy(S(comp, vr[i])[j], (char *)value[k]);
+            }
             
-            //S(comp, vr[i])[j] = value[k++];
-        }
-        
-        FILTERED_LOG(comp, fmi3OK, LOG_FMI_CALL, "fmi3SetBoolean: #b%u# = %s", vr[i], value[i] ? "true" : "false")
+            k++;
+        }        
     }
-    
-//    for (i = 0; i < nvr; i++) {
-//        char *string = (char *)comp->s[vr[i]];
-//        if (vrOutOfRange(comp, "fmi3SetString", vr[i], NUMBER_OF_STRINGS))
-//            return fmi3Error;
-//        FILTERED_LOG(comp, fmi3OK, LOG_FMI_CALL, "fmi3SetString: #s%d# = '%s'", vr[i], value[i])
-//
-//        if (value[i] == NULL) {
-//            if (string) comp->functions->freeMemory(c, string);
-//            comp->s[vr[i]] = NULL;
-//            FILTERED_LOG(comp, fmi3Warning, LOG_ERROR, "fmi3SetString: string argument value[%d] = NULL.", i);
-//        } else {
-//            if (string == NULL || strlen(string) < strlen(value[i])) {
-//                if (string) comp->functions->freeMemory(c, string);
-//                comp->s[vr[i]] = (char *)comp->functions->allocateMemory(c, 1 + strlen(value[i]), sizeof(char));
-//                if (!comp->s[vr[i]]) {
-//                    comp->state = modelError;
-//                    FILTERED_LOG(comp, fmi3Error, LOG_ERROR, "fmi3SetString: Out of memory.")
-//                    return fmi3Error;
-//                }
-//            }
-//            strcpy((char *)comp->s[vr[i]], (char *)value[i]);
-//        }
-//    }
     
     if (nvr > 0) comp->isDirtyValues = fmi3True;
     
